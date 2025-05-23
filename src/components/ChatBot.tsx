@@ -37,6 +37,7 @@ export const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const API_KEY = "AIzaSyAui_fZpDEo6wuek6OaPZvXq83gSb-SyuI";
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -58,26 +59,40 @@ export const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
     setInputMessage('');
     setIsLoading(true);
 
-    // TODO: Replace with actual Gemini API call through your backend
     try {
-      // Simulate API call to backend
-      const response = await fetch('/api/chat', {
+      // Call Gemini API directly
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: inputMessage }),
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are an AI interview assistant. You help users understand technical interview questions, 
+                  provide explanations for technical concepts, and give feedback on their answers. 
+                  Be concise, helpful, and focus on giving accurate technical information.
+                  
+                  User question: ${inputMessage}`
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800,
+          }
+        }),
       });
 
-      let botResponse = "I'm here to help! However, I need to be connected to your backend API to provide AI-powered responses. Once you set up the FastAPI backend with Gemini integration, I'll be able to give you detailed explanations and assistance with interview questions.";
-
-      // If API is not available, provide helpful mock responses
-      if (!response.ok) {
-        if (inputMessage.toLowerCase().includes('tcp') || inputMessage.toLowerCase().includes('udp')) {
-          botResponse = "Great question about networking protocols! TCP (Transmission Control Protocol) is connection-oriented and reliable, ensuring data is delivered correctly and in order. UDP (User Datagram Protocol) is connectionless and faster but doesn't guarantee delivery. TCP is like registered mail, UDP is like regular mail. Would you like me to explain more about their specific use cases?";
-        } else if (inputMessage.toLowerCase().includes('process') || inputMessage.toLowerCase().includes('thread')) {
-          botResponse = "Excellent OS question! A process is an independent program in execution with its own memory space, while a thread is a lightweight unit of execution within a process that shares memory with other threads. Think of a process as a house and threads as rooms in that house. Would you like me to elaborate on their differences in scheduling and resource management?";
-        }
+      const data = await response.json();
+      
+      let botResponse = "I'm sorry, I couldn't process your request at this time.";
+      
+      if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+        botResponse = data.candidates[0].content.parts[0].text;
       }
 
       const botMessage: Message = {
@@ -87,20 +102,17 @@ export const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
         timestamp: new Date()
       };
 
-      setTimeout(() => {
-        setMessages(prev => [...prev, botMessage]);
-        setIsLoading(false);
-      }, 1000);
-
+      setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm having trouble connecting to the AI service. Please make sure your backend is running and the Gemini API is properly configured.",
+        text: "I'm having trouble connecting to the Gemini API. Please check your internet connection and try again.",
         sender: 'bot',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
     }
   };

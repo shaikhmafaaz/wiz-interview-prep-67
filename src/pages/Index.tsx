@@ -14,38 +14,9 @@ const Index = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showGenerator, setShowGenerator] = useState(true);
   const [showQuestions, setShowQuestions] = useState(false);
+  const [questions, setQuestions] = useState([]);
 
-  // Mock data - will be replaced with API calls
-  const mockQuestions = [
-    {
-      id: 1,
-      question: "Explain the difference between TCP and UDP protocols.",
-      category: "Networking",
-      difficulty: "Medium",
-      description: "Understanding fundamental network protocols"
-    },
-    {
-      id: 2,
-      question: "What is the difference between process and thread?",
-      category: "Operating Systems",
-      difficulty: "Easy",
-      description: "Core OS concepts about process management"
-    },
-    {
-      id: 3,
-      question: "Explain ACID properties in database systems.",
-      category: "DBMS",
-      difficulty: "Medium",
-      description: "Database transaction management principles"
-    }
-  ];
-
-  const filteredQuestions = mockQuestions.filter(question => {
-    const categoryMatch = selectedCategory === 'all' || question.category === selectedCategory;
-    const difficultyMatch = selectedDifficulty === 'all' || question.difficulty === selectedDifficulty;
-    return categoryMatch && difficultyMatch;
-  });
-
+  // Stats section
   const stats = [
     { label: "Total Questions", value: "150+", icon: BookOpen, color: "text-blue-600" },
     { label: "Categories", value: "8", icon: Target, color: "text-green-600" },
@@ -53,14 +24,18 @@ const Index = () => {
     { label: "Local Setup", value: "✓", icon: MessageSquare, color: "text-orange-600" }
   ];
 
+  const handleQuestionsGenerated = (generatedQuestions) => {
+    setQuestions(generatedQuestions);
+    setShowQuestions(true);
+    setShowGenerator(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Header />
       
       <div className="flex">
         <Sidebar 
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
           selectedDifficulty={selectedDifficulty}
           setSelectedDifficulty={setSelectedDifficulty}
         />
@@ -90,33 +65,44 @@ const Index = () => {
               <p className="text-center text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
                 Prepare for your next interview with customized questions based on your role and experience level
               </p>
-              <QuestionGenerator />
+              <QuestionGenerator onQuestionsGenerated={handleQuestionsGenerated} />
             </div>
           )}
 
           {/* Questions Section */}
           {showQuestions && (
             <>
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Interview Questions
-                </h2>
-                <p className="text-gray-600">
-                  Practice with curated questions and get AI-powered assistance
-                </p>
+              <div className="mb-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Interview Questions
+                  </h2>
+                  <p className="text-gray-600">
+                    Practice with curated questions and get AI-powered assistance
+                  </p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowGenerator(true);
+                    setShowQuestions(false);
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+                >
+                  Generate New Questions
+                </button>
               </div>
 
               <div className="grid gap-6">
-                {filteredQuestions.map((question) => (
-                  <QuestionCard key={question.id} question={question} />
+                {questions.map((question, index) => (
+                  <QuestionCard key={index} question={question} />
                 ))}
               </div>
 
-              {filteredQuestions.length === 0 && (
+              {questions.length === 0 && (
                 <Card className="p-8 text-center">
                   <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No questions found</h3>
-                  <p className="text-gray-600">Try adjusting your filters or select a different category.</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No questions generated yet</h3>
+                  <p className="text-gray-600">Please return to the generator and create some questions.</p>
                 </Card>
               )}
             </>
