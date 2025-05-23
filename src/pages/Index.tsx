@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { QuestionCard } from '@/components/QuestionCard';
@@ -21,8 +19,7 @@ const Index = () => {
   const stats = [
     { label: "Total Questions", value: "150+", icon: BookOpen, color: "text-blue-600" },
     { label: "Categories", value: "8", icon: Target, color: "text-green-600" },
-    { label: "AI Powered", value: "100%", icon: Brain, color: "text-purple-600" },
-    { label: "Local Setup", value: "✓", icon: MessageSquare, color: "text-orange-600" }
+    { label: "AI Powered", value: "100%", icon: Brain, color: "text-purple-600" }
   ];
 
   const handleQuestionsGenerated = (generatedQuestions) => {
@@ -43,7 +40,7 @@ const Index = () => {
         
         <main className="flex-1 p-6 ml-64">
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {stats.map((stat, index) => (
               <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-center justify-between">
@@ -135,4 +132,3 @@ const Index = () => {
 };
 
 export default Index;
-
