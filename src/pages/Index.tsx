@@ -6,11 +6,14 @@ import { ChatBot } from '@/components/ChatBot';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/card';
 import { Brain, MessageSquare, BookOpen, Target } from 'lucide-react';
+import { QuestionGenerator } from '@/components/QuestionGenerator';
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showGenerator, setShowGenerator] = useState(true);
+  const [showQuestions, setShowQuestions] = useState(false);
 
   // Mock data - will be replaced with API calls
   const mockQuestions = [
@@ -78,28 +81,45 @@ const Index = () => {
             ))}
           </div>
 
+          {/* Question Generator */}
+          {showGenerator && (
+            <div className="mb-10 bg-gradient-to-br from-slate-100 to-blue-100 rounded-xl p-8">
+              <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
+                Interview Question Generator
+              </h1>
+              <p className="text-center text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
+                Prepare for your next interview with customized questions based on your role and experience level
+              </p>
+              <QuestionGenerator />
+            </div>
+          )}
+
           {/* Questions Section */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Interview Questions
-            </h2>
-            <p className="text-gray-600">
-              Practice with curated questions and get AI-powered assistance
-            </p>
-          </div>
+          {showQuestions && (
+            <>
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Interview Questions
+                </h2>
+                <p className="text-gray-600">
+                  Practice with curated questions and get AI-powered assistance
+                </p>
+              </div>
 
-          <div className="grid gap-6">
-            {filteredQuestions.map((question) => (
-              <QuestionCard key={question.id} question={question} />
-            ))}
-          </div>
+              <div className="grid gap-6">
+                {filteredQuestions.map((question) => (
+                  <QuestionCard key={question.id} question={question} />
+                ))}
+              </div>
 
-          {filteredQuestions.length === 0 && (
-            <Card className="p-8 text-center">
-              <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No questions found</h3>
-              <p className="text-gray-600">Try adjusting your filters or select a different category.</p>
-            </Card>
+              {filteredQuestions.length === 0 && (
+                <Card className="p-8 text-center">
+                  <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No questions found</h3>
+                  <p className="text-gray-600">Try adjusting your filters or select a different category.</p>
+                </Card>
+              )}
+            </>
           )}
         </main>
       </div>
