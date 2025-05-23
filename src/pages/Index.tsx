@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { QuestionCard } from '@/components/QuestionCard';
@@ -31,10 +32,10 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
       <Header />
       
-      <div className="flex">
+      <div className="flex flex-1">
         <Sidebar 
           selectedDifficulty={selectedDifficulty}
           setSelectedDifficulty={setSelectedDifficulty}
@@ -110,6 +111,15 @@ const Index = () => {
         </main>
       </div>
 
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4 px-6 ml-64">
+        <div className="text-center">
+          <p className="text-gray-600 text-sm font-medium">
+            DESIGNED AND MADE BY SANA S SHAIKH
+          </p>
+        </div>
+      </footer>
+
       {/* Floating Chat Button */}
       <Button
         onClick={() => setIsChatOpen(true)}
@@ -125,3 +135,4 @@ const Index = () => {
 };
 
 export default Index;
+
