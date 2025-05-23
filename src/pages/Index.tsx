@@ -1,15 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { QuestionCard } from '@/components/QuestionCard';
 import { ChatBot } from '@/components/ChatBot';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, MessageSquare, BookOpen, Target, LogIn } from 'lucide-react';
+import { Brain, MessageSquare, BookOpen, Target } from 'lucide-react';
 import { QuestionGenerator } from '@/components/QuestionGenerator';
-import { AuthDialog } from '@/components/Auth/AuthDialog';
-import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
@@ -17,15 +15,6 @@ const Index = () => {
   const [showGenerator, setShowGenerator] = useState(true);
   const [showQuestions, setShowQuestions] = useState(false);
   const [questions, setQuestions] = useState([]);
-  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { toast } = useToast();
-
-  // Check if user is logged in
-  useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
-  }, []);
 
   // Stats section
   const stats = [
@@ -41,16 +30,6 @@ const Index = () => {
     setShowGenerator(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userId');
-    setIsLoggedIn(false);
-    toast({
-      title: "Logged out",
-      description: "You've been successfully logged out.",
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Header />
@@ -62,28 +41,6 @@ const Index = () => {
         />
         
         <main className="flex-1 p-6 ml-64">
-          {/* Auth Button */}
-          <div className="flex justify-end mb-4">
-            {isLoggedIn ? (
-              <Button 
-                onClick={handleLogout}
-                variant="outline"
-                className="flex items-center"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            ) : (
-              <Button 
-                onClick={() => setIsAuthDialogOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 flex items-center"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Login / Register
-              </Button>
-            )}
-          </div>
-
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             {stats.map((stat, index) => (
@@ -163,12 +120,6 @@ const Index = () => {
 
       {/* Chat Bot */}
       <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-      
-      {/* Auth Dialog */}
-      <AuthDialog 
-        isOpen={isAuthDialogOpen} 
-        onClose={() => setIsAuthDialogOpen(false)} 
-      />
     </div>
   );
 };
