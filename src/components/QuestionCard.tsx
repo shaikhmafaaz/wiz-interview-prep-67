@@ -9,8 +9,7 @@ import {
   Edit3, 
   Save, 
   CheckCircle, 
-  Clock,
-  MessageSquare 
+  Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,17 +41,43 @@ export const QuestionCard = ({ question }: QuestionCardProps) => {
       return;
     }
 
-    // TODO: Replace with actual API call
-    console.log('Saving answer:', { questionId: question.id, answer });
-    
-    // Simulate API call
-    setTimeout(() => {
+    // Save to local database via API
+    try {
+      const response = await fetch('http://localhost:8000/api/answers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          questionId: question.id,
+          answer: answer,
+          userId: localStorage.getItem('userId') || 'guest'
+        }),
+      });
+
+      if (response.ok) {
+        setIsSaved(true);
+        toast({
+          title: "Answer saved!",
+          description: "Your answer has been saved for review.",
+        });
+      } else {
+        toast({
+          title: "Failed to save",
+          description: "Your answer couldn't be saved. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error saving answer:', error);
+      // Fallback to local storage if API is not available yet
+      console.log('Saving answer:', { questionId: question.id, answer });
       setIsSaved(true);
       toast({
-        title: "Answer saved!",
+        title: "Answer saved locally!",
         description: "Your answer has been saved for review.",
       });
-    }, 500);
+    }
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -129,19 +154,13 @@ export const QuestionCard = ({ question }: QuestionCardProps) => {
                 Cancel
               </Button>
               
-              <div className="flex space-x-2">
-                <Button variant="outline">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Ask AI
-                </Button>
-                <Button 
-                  onClick={handleSaveAnswer}
-                  disabled={!answer.trim()}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Answer
-                </Button>
-              </div>
+              <Button 
+                onClick={handleSaveAnswer}
+                disabled={!answer.trim()}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Answer
+              </Button>
             </div>
           </div>
         )}

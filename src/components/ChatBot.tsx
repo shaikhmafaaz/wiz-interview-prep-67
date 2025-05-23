@@ -29,7 +29,7 @@ export const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm your AI interview assistant powered by Gemini. I can help you understand interview questions, provide hints, explain concepts, and give you feedback on your answers. How can I help you today?",
+      text: "Hi! I'm your AI interview assistant. I can help you understand interview questions, provide hints, explain concepts, and give you feedback on your answers. How can I help you today?",
       sender: 'bot',
       timestamp: new Date()
     }
@@ -60,8 +60,8 @@ export const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
     setIsLoading(true);
 
     try {
-      // Call Gemini API directly
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+      // Updated Gemini API endpoint and version
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,6 +93,9 @@ export const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
       
       if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
         botResponse = data.candidates[0].content.parts[0].text;
+      } else if (data.error) {
+        botResponse = `API Error: ${data.error.message || "Unknown error occurred"}`;
+        console.error("Gemini API Error:", data.error);
       }
 
       const botMessage: Message = {

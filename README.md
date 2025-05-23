@@ -1,73 +1,76 @@
-# Welcome to your Lovable project
 
-## Project info
+# Interview-Wiz-Guide
 
-**URL**: https://lovable.dev/projects/dc2110e7-5ac3-4e5c-a221-18ae80a664fe
+A full-stack interview preparation platform that runs locally on your machine. Prepare for technical interviews with AI-powered assistance!
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Interview question generator with customizable role and experience level
+- Answer questions and save your responses locally
+- AI-powered chatbot for assistance using Google's Gemini API
+- Local authentication system
+- Fully local setup (backend + frontend)
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/dc2110e7-5ac3-4e5c-a221-18ae80a664fe) and start prompting.
+- **Frontend**: React with Tailwind CSS and shadcn/ui
+- **Backend**: Python with FastAPI
+- **Database**: SQLite (local)
+- **AI**: Google Gemini API
 
-Changes made via Lovable will be committed automatically to this repo.
+## Setup Instructions
 
-**Use your preferred IDE**
+### Backend Setup
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Make sure you have Python 3.8+ installed
+2. Navigate to the backend directory
+```bash
+cd backend
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
 
-Follow these steps:
+4. Run the backend server
+```bash
+python main.py
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+The API will be available at `http://localhost:8000`
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Frontend Setup
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. Make sure you have Node.js installed
+2. Install dependencies
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Run the development server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The frontend will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Usage
 
-**Use GitHub Codespaces**
+1. Register an account or use the application as a guest
+2. Generate interview questions based on your role and experience level
+3. Practice answering questions and save your responses
+4. Use the AI chatbot for help with difficult concepts or feedback on your answers
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## API Endpoints
 
-## What technologies are used for this project?
+- **Auth**
+  - `POST /api/auth/register` - Register a new user
+  - `POST /api/auth/login` - Login existing user
 
-This project is built with:
+- **Questions**
+  - `GET /api/questions` - Get all questions (with optional category/difficulty filters)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/dc2110e7-5ac3-4e5c-a221-18ae80a664fe) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- **Answers**
+  - `POST /api/answers` - Save a new answer
+  - `GET /api/answers/{user_id}` - Get all answers for a specific user
