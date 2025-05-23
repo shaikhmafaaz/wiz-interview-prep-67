@@ -18,7 +18,36 @@ A full-stack interview preparation platform that runs locally on your machine. P
 - **Database**: SQLite (local)
 - **AI**: Google Gemini API
 
-## Setup Instructions
+## Quick Start with Docker (Recommended)
+
+### Prerequisites
+- Docker and Docker Compose installed on your machine
+
+### Run with Docker Compose
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd interview-wiz-guide
+
+# Build and start the application
+docker-compose up -d
+
+# The application will be available at http://localhost:3000
+```
+
+### Build Docker Image Manually
+```bash
+# Make the build script executable
+chmod +x docker-build.sh
+
+# Run the build script
+./docker-build.sh
+
+# Run the container
+docker run -p 3000:80 -v $(pwd)/backend/database:/app/backend/database interview-wiz-guide
+```
+
+## Manual Setup (Alternative)
 
 ### Backend Setup
 
@@ -62,6 +91,16 @@ The frontend will be available at `http://localhost:5173`
 3. Practice answering questions and save your responses
 4. Use the AI chatbot for help with difficult concepts or feedback on your answers
 
+## Docker Configuration
+
+The Docker setup includes:
+- **nginx**: Serves the frontend and proxies API requests to the backend
+- **FastAPI**: Python backend running on port 8000 (internal)
+- **SQLite**: Database persisted in a Docker volume
+- **Supervisor**: Process manager to run both nginx and FastAPI
+
+All services run on port 3000 externally, with nginx handling the routing between frontend and backend.
+
 ## API Endpoints
 
 - **Auth**
@@ -74,3 +113,15 @@ The frontend will be available at `http://localhost:5173`
 - **Answers**
   - `POST /api/answers` - Save a new answer
   - `GET /api/answers/{user_id}` - Get all answers for a specific user
+
+## Troubleshooting
+
+### Docker Issues
+- If you get permission errors, make sure Docker is running and you have proper permissions
+- For database persistence issues, check the volume mounting in docker-compose.yml
+- Check logs with: `docker-compose logs`
+
+### Manual Setup Issues
+- Make sure all dependencies are installed correctly
+- Check that ports 3000, 5173, and 8000 are not in use by other applications
+- Verify that Python 3.8+ and Node.js are properly installed
