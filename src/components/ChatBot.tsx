@@ -28,7 +28,7 @@ export const ChatBot = ({ isOpen, onClose }: ChatBotProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm your AI interview assistant. I can help you understand interview questions, provide hints, explain concepts, and give you feedback on your answers. How can I help you today?",
+      text: "Hi! I'm your AI interview assistant made by SANA S SHAIKH. I can help you understand interview questions, provide hints, explain concepts, and give you feedback on your answers. How can I help you today?",
       sender: 'bot',
       timestamp: new Date()
     }
