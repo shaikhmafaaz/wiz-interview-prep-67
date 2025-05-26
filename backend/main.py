@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Depends
+
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -6,6 +7,12 @@ import sqlite3
 import os
 import hashlib
 import uuid
+import logging
+import time
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create the database directory if it doesn't exist
 os.makedirs("database", exist_ok=True)
@@ -14,126 +21,49 @@ os.makedirs("database", exist_ok=True)
 conn = sqlite3.connect("database/interview_wiz.db")
 cursor = conn.cursor()
 
-# Create tables
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
-)
-''')
-
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS questions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    question TEXT NOT NULL,
-    category TEXT NOT NULL,
-    difficulty TEXT NOT NULL,
-    description TEXT
-)
-''')
-
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS answers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    question_id INTEGER NOT NULL,
-    user_id TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (question_id) REFERENCES questions (id),
-    FOREIGN KEY (user_id) REFERENCES users (id)
-)
-''')
-
-conn.commit()
-
-# Insert some sample questions
-sample_questions = [
-    ("What is the OSI model?", "Networking", "Medium", "Explain the seven layers of the OSI model and their functions."),
-    ("Explain ACID properties in database systems.", "DBMS", "Medium", "Define Atomicity, Consistency, Isolation, and Durability."),
-    ("What is a deadlock in operating systems?", "OS", "Hard", "Explain deadlocks, their conditions, and prevention strategies."),
-    ("Explain SQL injection and how to prevent it.", "Cybersecurity", "Easy", "Describe SQL injection attacks and best practices to prevent them."),
-]
-
-cursor.executemany(
-    "INSERT OR IGNORE INTO questions (question, category, difficulty, description) VALUES (?, ?, ?, ?)",
-    sample_questions
-)
-
-conn.commit()
-conn.close()
+# ... keep existing code (database table creation and sample data insertion)
 
 app = FastAPI(title="Interview-Wiz-Guide API")
 
 # Enable CORS - Updated to include new frontend port
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://localhost:5173"],
+    allow_origins=["http://localhost:8080", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Models
-class User(BaseModel):
-    name: str
-    email: str
-    password: str
+# Add middleware to log requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # Log incoming request
+    logger.info(f"🔵 INCOMING REQUEST: {request.method} {request.url}")
+    if request.method in ["POST", "PUT", "PATCH"]:
+        logger.info(f"📝 Request headers: {dict(request.headers)}")
+    
+    response = await call_next(request)
+    
+    # Log response
+    process_time = time.time() - start_time
+    logger.info(f"✅ RESPONSE: {response.status_code} | Time: {process_time:.2f}s | {request.method} {request.url.path}")
+    
+    return response
 
-class UserResponse(BaseModel):
-    id: str
-    name: str
-    email: str
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-class Question(BaseModel):
-    question: str
-    category: str
-    difficulty: str
-    description: Optional[str] = None
-
-class QuestionResponse(BaseModel):
-    id: int
-    question: str
-    category: str
-    difficulty: str
-    description: Optional[str] = None
-
-class Answer(BaseModel):
-    questionId: int
-    answer: str
-    userId: str
-
-class AnswerResponse(BaseModel):
-    id: int
-    questionId: int
-    userId: str
-    answer: str
-
-# Helper functions
-def get_db():
-    conn = sqlite3.connect("database/interview_wiz.db")
-    conn.row_factory = sqlite3.Row
-    try:
-        yield conn
-    finally:
-        conn.close()
-
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+# ... keep existing code (models, helper functions)
 
 # Authentication routes
 @app.post("/api/auth/register", response_model=UserResponse)
 async def register(user: User, db: sqlite3.Connection = Depends(get_db)):
+    logger.info(f"👤 Registration attempt for email: {user.email}")
     cursor = db.cursor()
     
     # Check if email already exists
     cursor.execute("SELECT * FROM users WHERE email = ?", (user.email,))
     if cursor.fetchone():
+        logger.warning(f"❌ Registration failed - email already exists: {user.email}")
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create user
@@ -146,10 +76,12 @@ async def register(user: User, db: sqlite3.Connection = Depends(get_db)):
     )
     db.commit()
     
+    logger.info(f"✅ User registered successfully: {user.email} with ID: {user_id}")
     return UserResponse(id=user_id, name=user.name, email=user.email)
 
 @app.post("/api/auth/login")
 async def login(request: LoginRequest, db: sqlite3.Connection = Depends(get_db)):
+    logger.info(f"🔐 Login attempt for email: {request.email}")
     cursor = db.cursor()
     hashed_password = hash_password(request.password)
     
@@ -160,8 +92,10 @@ async def login(request: LoginRequest, db: sqlite3.Connection = Depends(get_db))
     
     user = cursor.fetchone()
     if not user:
+        logger.warning(f"❌ Login failed for email: {request.email}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    logger.info(f"✅ Login successful for user: {request.email}")
     return {"id": user["id"], "name": user["name"], "email": user["email"]}
 
 # Question routes
@@ -171,6 +105,7 @@ async def get_questions(
     difficulty: Optional[str] = None,
     db: sqlite3.Connection = Depends(get_db)
 ):
+    logger.info(f"📚 Fetching questions - Category: {category}, Difficulty: {difficulty}")
     cursor = db.cursor()
     
     query = "SELECT * FROM questions"
@@ -190,6 +125,7 @@ async def get_questions(
     cursor.execute(query, params)
     questions = cursor.fetchall()
     
+    logger.info(f"📊 Found {len(questions)} questions")
     return [
         QuestionResponse(
             id=q["id"],
@@ -204,6 +140,7 @@ async def get_questions(
 # Answer routes
 @app.post("/api/answers", response_model=AnswerResponse)
 async def save_answer(answer: Answer, db: sqlite3.Connection = Depends(get_db)):
+    logger.info(f"💾 Saving answer - Question ID: {answer.questionId}, User ID: {answer.userId}")
     cursor = db.cursor()
     
     cursor.execute(
@@ -213,6 +150,7 @@ async def save_answer(answer: Answer, db: sqlite3.Connection = Depends(get_db)):
     db.commit()
     
     answer_id = cursor.lastrowid
+    logger.info(f"✅ Answer saved successfully with ID: {answer_id}")
     
     return AnswerResponse(
         id=answer_id,
@@ -223,6 +161,7 @@ async def save_answer(answer: Answer, db: sqlite3.Connection = Depends(get_db)):
 
 @app.get("/api/answers/{user_id}", response_model=List[AnswerResponse])
 async def get_user_answers(user_id: str, db: sqlite3.Connection = Depends(get_db)):
+    logger.info(f"📖 Fetching answers for user: {user_id}")
     cursor = db.cursor()
     
     cursor.execute(
@@ -231,6 +170,7 @@ async def get_user_answers(user_id: str, db: sqlite3.Connection = Depends(get_db
     )
     answers = cursor.fetchall()
     
+    logger.info(f"📊 Found {len(answers)} answers for user: {user_id}")
     return [
         AnswerResponse(
             id=a["id"],
@@ -243,4 +183,5 @@ async def get_user_answers(user_id: str, db: sqlite3.Connection = Depends(get_db
 
 if __name__ == "__main__":
     import uvicorn
+    logger.info("🚀 Starting Interview-Wiz-Guide API server on port 5000")
     uvicorn.run(app, host="0.0.0.0", port=5000)
