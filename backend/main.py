@@ -9,19 +9,76 @@ import hashlib
 import uuid
 import logging
 import time
+from datetime import datetime, timezone
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create the database directory if it doesn't exist
-os.makedirs("database", exist_ok=True)
+# Create the data directory if it doesn't exist
+os.makedirs("data", exist_ok=True)
 
 # Initialize the database
-conn = sqlite3.connect("database/interview_wiz.db")
+conn = sqlite3.connect("data/interview_wiz.db")
 cursor = conn.cursor()
 
-# ... keep existing code (database table creation and sample data insertion)
+# Create tables with timestamps
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question TEXT NOT NULL,
+        category TEXT NOT NULL,
+        difficulty TEXT NOT NULL,
+        description TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+""")
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS answers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (question_id) REFERENCES questions (id),
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+""")
+
+# Insert sample questions with timestamps if they don't exist
+cursor.execute("SELECT COUNT(*) FROM questions")
+if cursor.fetchone()[0] == 0:
+    current_time = datetime.now(timezone.utc).isoformat()
+    sample_questions = [
+        ("What is React and how does it work?", "Frontend", "Easy", "Explain the basics of React framework", current_time, current_time),
+        ("Explain the difference between var, let, and const in JavaScript", "Frontend", "Medium", "Discuss variable declarations in JavaScript", current_time, current_time),
+        ("How do you optimize React performance?", "Frontend", "Hard", "Discuss various React optimization techniques", current_time, current_time),
+        ("What is a RESTful API?", "Backend", "Easy", "Explain REST principles and API design", current_time, current_time),
+        ("Explain database indexing", "Backend", "Medium", "Discuss how database indexes work and their benefits", current_time, current_time),
+        ("Design a scalable microservices architecture", "Backend", "Hard", "Architect a distributed system with microservices", current_time, current_time),
+    ]
+    
+    cursor.executemany(
+        "INSERT INTO questions (question, category, difficulty, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        sample_questions
+    )
+
+conn.commit()
+conn.close()
 
 app = FastAPI(title="Interview-Wiz-Guide API")
 
@@ -52,7 +109,59 @@ async def log_requests(request: Request, call_next):
     
     return response
 
-# ... keep existing code (models, helper functions)
+# Utility functions
+def get_current_timestamp():
+    return datetime.now(timezone.utc).isoformat()
+
+def get_db():
+    conn = sqlite3.connect("data/interview_wiz.db")
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# Pydantic models
+class User(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    created_at: str
+    updated_at: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class Answer(BaseModel):
+    questionId: int
+    userId: str
+    answer: str
+
+class AnswerResponse(BaseModel):
+    id: int
+    questionId: int
+    userId: str
+    answer: str
+    created_at: str
+    updated_at: str
+
+class QuestionResponse(BaseModel):
+    id: int
+    question: str
+    category: str
+    difficulty: str
+    description: str
+    created_at: str
+    updated_at: str
 
 # Authentication routes
 @app.post("/api/auth/register", response_model=UserResponse)
@@ -69,15 +178,22 @@ async def register(user: User, db: sqlite3.Connection = Depends(get_db)):
     # Create user
     user_id = str(uuid.uuid4())
     hashed_password = hash_password(user.password)
+    current_time = get_current_timestamp()
     
     cursor.execute(
-        "INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)",
-        (user_id, user.name, user.email, hashed_password)
+        "INSERT INTO users (id, name, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, user.name, user.email, hashed_password, current_time, current_time)
     )
     db.commit()
     
-    logger.info(f"✅ User registered successfully: {user.email} with ID: {user_id}")
-    return UserResponse(id=user_id, name=user.name, email=user.email)
+    logger.info(f"✅ User registered successfully: {user.email} with ID: {user_id} at {current_time}")
+    return UserResponse(
+        id=user_id, 
+        name=user.name, 
+        email=user.email,
+        created_at=current_time,
+        updated_at=current_time
+    )
 
 @app.post("/api/auth/login")
 async def login(request: LoginRequest, db: sqlite3.Connection = Depends(get_db)):
@@ -95,8 +211,14 @@ async def login(request: LoginRequest, db: sqlite3.Connection = Depends(get_db))
         logger.warning(f"❌ Login failed for email: {request.email}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    logger.info(f"✅ Login successful for user: {request.email}")
-    return {"id": user["id"], "name": user["name"], "email": user["email"]}
+    logger.info(f"✅ Login successful for user: {request.email} at {get_current_timestamp()}")
+    return {
+        "id": user["id"], 
+        "name": user["name"], 
+        "email": user["email"],
+        "created_at": user["created_at"],
+        "updated_at": user["updated_at"]
+    }
 
 # Question routes
 @app.get("/api/questions", response_model=List[QuestionResponse])
@@ -105,7 +227,7 @@ async def get_questions(
     difficulty: Optional[str] = None,
     db: sqlite3.Connection = Depends(get_db)
 ):
-    logger.info(f"📚 Fetching questions - Category: {category}, Difficulty: {difficulty}")
+    logger.info(f"📚 Fetching questions - Category: {category}, Difficulty: {difficulty} at {get_current_timestamp()}")
     cursor = db.cursor()
     
     query = "SELECT * FROM questions"
@@ -125,14 +247,16 @@ async def get_questions(
     cursor.execute(query, params)
     questions = cursor.fetchall()
     
-    logger.info(f"📊 Found {len(questions)} questions")
+    logger.info(f"📊 Found {len(questions)} questions at {get_current_timestamp()}")
     return [
         QuestionResponse(
             id=q["id"],
             question=q["question"],
             category=q["category"],
             difficulty=q["difficulty"],
-            description=q["description"]
+            description=q["description"],
+            created_at=q["created_at"],
+            updated_at=q["updated_at"]
         )
         for q in questions
     ]
@@ -140,28 +264,32 @@ async def get_questions(
 # Answer routes
 @app.post("/api/answers", response_model=AnswerResponse)
 async def save_answer(answer: Answer, db: sqlite3.Connection = Depends(get_db)):
-    logger.info(f"💾 Saving answer - Question ID: {answer.questionId}, User ID: {answer.userId}")
+    current_time = get_current_timestamp()
+    logger.info(f"💾 Saving answer - Question ID: {answer.questionId}, User ID: {answer.userId} at {current_time}")
     cursor = db.cursor()
     
     cursor.execute(
-        "INSERT INTO answers (question_id, user_id, answer) VALUES (?, ?, ?)",
-        (answer.questionId, answer.userId, answer.answer)
+        "INSERT INTO answers (question_id, user_id, answer, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+        (answer.questionId, answer.userId, answer.answer, current_time, current_time)
     )
     db.commit()
     
     answer_id = cursor.lastrowid
-    logger.info(f"✅ Answer saved successfully with ID: {answer_id}")
+    logger.info(f"✅ Answer saved successfully with ID: {answer_id} at {current_time}")
     
     return AnswerResponse(
         id=answer_id,
         questionId=answer.questionId,
         userId=answer.userId,
-        answer=answer.answer
+        answer=answer.answer,
+        created_at=current_time,
+        updated_at=current_time
     )
 
 @app.get("/api/answers/{user_id}", response_model=List[AnswerResponse])
 async def get_user_answers(user_id: str, db: sqlite3.Connection = Depends(get_db)):
-    logger.info(f"📖 Fetching answers for user: {user_id}")
+    current_time = get_current_timestamp()
+    logger.info(f"📖 Fetching answers for user: {user_id} at {current_time}")
     cursor = db.cursor()
     
     cursor.execute(
@@ -170,18 +298,20 @@ async def get_user_answers(user_id: str, db: sqlite3.Connection = Depends(get_db
     )
     answers = cursor.fetchall()
     
-    logger.info(f"📊 Found {len(answers)} answers for user: {user_id}")
+    logger.info(f"📊 Found {len(answers)} answers for user: {user_id} at {current_time}")
     return [
         AnswerResponse(
             id=a["id"],
             questionId=a["question_id"],
             userId=a["user_id"],
-            answer=a["answer"]
+            answer=a["answer"],
+            created_at=a["created_at"],
+            updated_at=a["updated_at"]
         )
         for a in answers
     ]
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("🚀 Starting Interview-Wiz-Guide API server on port 5000")
+    logger.info(f"🚀 Starting Interview-Wiz-Guide API server on port 5000 at {get_current_timestamp()}")
     uvicorn.run(app, host="0.0.0.0", port=5000)
