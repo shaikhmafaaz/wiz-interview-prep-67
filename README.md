@@ -18,60 +18,39 @@ A full-stack interview preparation platform that runs locally on your machine. P
 - **Database**: SQLite (local)
 - **AI**: Google Gemini API
 
-## Quick Start with Docker (Recommended)
+## Setup Instructions
 
 ### Prerequisites
-- Docker and Docker Compose installed on your machine
-
-### Run with Docker Compose
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd interview-wiz-guide
-
-# Build and start the application
-docker-compose up -d
-
-# The application will be available at http://localhost:3000
-```
-
-### Build Docker Image Manually
-```bash
-# Make the build script executable
-chmod +x docker-build.sh
-
-# Run the build script
-./docker-build.sh
-
-# Run the container
-docker run -p 3000:80 -v $(pwd)/backend/database:/app/backend/database interview-wiz-guide
-```
-
-## Manual Setup (Alternative)
+- Node.js (version 14 or higher)
+- Python 3.8+
+- npm or yarn
 
 ### Backend Setup
 
-1. Make sure you have Python 3.8+ installed
-2. Navigate to the backend directory
+1. Navigate to the backend directory
 ```bash
 cd backend
 ```
 
-3. Install dependencies
+2. Install Python dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Run the backend server
+3. Run the backend server
 ```bash
 python main.py
 ```
 
-The API will be available at `http://localhost:8000`
+The API will be available at `http://localhost:5000`
 
 ### Frontend Setup
 
-1. Make sure you have Node.js installed
+1. Navigate to the root directory (if not already there)
+```bash
+# Make sure you're in the project root
+```
+
 2. Install dependencies
 ```bash
 npm install
@@ -82,24 +61,34 @@ npm install
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`
+The frontend will be available at `http://localhost:8000`
 
 ## Usage
 
-1. Register an account or use the application as a guest
-2. Generate interview questions based on your role and experience level
-3. Practice answering questions and save your responses
-4. Use the AI chatbot for help with difficult concepts or feedback on your answers
+1. Start the backend server first (runs on port 5000)
+2. Start the frontend development server (runs on port 8000)
+3. Open your browser and go to `http://localhost:8000`
+4. Register an account or use the application as a guest
+5. Generate interview questions based on your role and experience level
+6. Practice answering questions and save your responses
+7. Use the AI chatbot for help with difficult concepts or feedback on your answers
 
-## Docker Configuration
+## Project Structure
 
-The Docker setup includes:
-- **nginx**: Serves the frontend and proxies API requests to the backend
-- **FastAPI**: Python backend running on port 8000 (internal)
-- **SQLite**: Database persisted in a Docker volume
-- **Supervisor**: Process manager to run both nginx and FastAPI
-
-All services run on port 3000 externally, with nginx handling the routing between frontend and backend.
+```
+interview-wiz-guide/
+├── backend/                 # Python FastAPI backend
+│   ├── main.py             # Main backend server file
+│   ├── requirements.txt    # Python dependencies
+│   └── database/           # SQLite database files
+├── src/                    # React frontend source
+│   ├── components/         # React components
+│   ├── pages/             # Page components
+│   ├── hooks/             # Custom React hooks
+│   └── lib/               # Utility functions
+├── public/                # Static assets
+└── package.json           # Node.js dependencies
+```
 
 ## API Endpoints
 
@@ -114,14 +103,32 @@ All services run on port 3000 externally, with nginx handling the routing betwee
   - `POST /api/answers` - Save a new answer
   - `GET /api/answers/{user_id}` - Get all answers for a specific user
 
+## Development
+
+The frontend automatically proxies API requests to the backend running on port 5000. This is configured in `vite.config.ts`.
+
 ## Troubleshooting
 
-### Docker Issues
-- If you get permission errors, make sure Docker is running and you have proper permissions
-- For database persistence issues, check the volume mounting in docker-compose.yml
-- Check logs with: `docker-compose logs`
+### Port Issues
+- Make sure ports 5000 and 8000 are not in use by other applications
+- Backend must be running on port 5000 before starting frontend
+- If you get CORS errors, ensure the backend CORS settings include the frontend URL
 
-### Manual Setup Issues
-- Make sure all dependencies are installed correctly
-- Check that ports 3000, 5173, and 8000 are not in use by other applications
-- Verify that Python 3.8+ and Node.js are properly installed
+### Database Issues
+- The SQLite database will be automatically created in `backend/database/`
+- If you encounter database errors, delete the database file and restart the backend
+
+### Dependency Issues
+- Make sure all Node.js dependencies are installed: `npm install`
+- Make sure all Python dependencies are installed: `pip install -r backend/requirements.txt`
+- Verify Python 3.8+ and Node.js are properly installed
+
+## Features in Detail
+
+1. **Question Generation**: Based on role and experience level selection
+2. **Answer Writing**: Rich text area for detailed responses
+3. **Local Storage**: Answers saved to local SQLite database
+4. **File Export**: Download answers as text files to your Downloads folder
+5. **User Management**: Registration and login system with password hashing
+6. **AI Chat Assistant**: Powered by Google Gemini API for interview help
+7. **Responsive UI**: Works on desktop and mobile devices

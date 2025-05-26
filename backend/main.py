@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -67,10 +66,10 @@ conn.close()
 
 app = FastAPI(title="Interview-Wiz-Guide API")
 
-# Enable CORS
+# Enable CORS - Updated to include new frontend port
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:8000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -244,4 +243,4 @@ async def get_user_answers(user_id: str, db: sqlite3.Connection = Depends(get_db
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=5000)
